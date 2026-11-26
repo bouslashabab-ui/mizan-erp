@@ -20,7 +20,8 @@ async function openPage(key) {
   openWin(key, TITLES[key] || key, async () => { const r = f(); return await r; });
 }
 
-function logout() { sessionStorage.removeItem('mz_tok'); location.reload(); }
+function logout() { SND.play('logout'); sessionStorage.removeItem('mz_tok'); setTimeout(() => location.reload(), 650); }
+function muteBtn() { const b = h('button', { class: 'mute', title: 'كتم / تشغيل الأصوات', onclick: () => { const m = SND.toggle(); b.textContent = m ? '🔇' : '🔊'; } }, SND.muted ? '🔇' : '🔊'); return b; }
 
 function shell() {
   const app = $('#app'); app.innerHTML = '';
@@ -33,7 +34,7 @@ function shell() {
     h('button', { class: 'tb', onclick: () => { const w = MZ.wins[MZ.active]; w && w.refresh && w.refresh(); } }, h('i', null, '🔄'), 'تحديث'));
   app.append(
     h('div', { class: 'banner' }, h('div', { class: 'brand', html: LOGO + '<div><h1>ميزان ERP</h1><small>' + esc(MZ.settings.company_name || 'نظام المحاسبة وإدارة الأعمال') + '</small></div>' }),
-      h('div', { class: 'who' }, h('span', { class: 'chip' }, '👤 ' + (MZ.user.name || MZ.user.username) + ' | ' + (MZ.user.role_name || '')), h('button', { onclick: logout }, 'تسجيل الخروج'))),
+      h('div', { class: 'who' }, muteBtn(), h('span', { class: 'chip' }, '👤 ' + (MZ.user.name || MZ.user.username) + ' | ' + (MZ.user.role_name || '')), h('button', { onclick: logout }, 'تسجيل الخروج'))),
     menu, tb, h('div', { class: 'tabs', id: 'tabs' }), h('div', { id: 'desk' }),
     h('div', { class: 'statusbar' }, h('span', null, 'ميزان ERP'), h('span', null, new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }))));
   openWin('home', 'الرئيسية', () => MZ.pages.home());
@@ -62,7 +63,7 @@ function loginScreen() {
     try {
       if (setupMode) { await POST('/setup', { username: user.value, password: pass.value, company: company.value, name: 'مدير النظام' }); }
       const r = await POST('/login', { username: user.value, password: pass.value });
-      MZ.token = r.token; sessionStorage.setItem('mz_tok', r.token); await boot();
+      MZ.token = r.token; sessionStorage.setItem('mz_tok', r.token); SND.play('login'); await boot();
     } catch (err) { msg.className = 'lg-msg'; msg.textContent = err.message; go.disabled = false; }
   } }, title, sub, compBox, h('label', { for: 'u' }, 'اسم المستخدم'), user, h('label', { for: 'p' }, 'كلمة المرور'), pass, go, msg, h('div', { class: 'lg-foot' }, 'ميزان ERP © نظام محاسبة وإدارة أعمال متكامل'));
   app.append(h('div', { class: 'login-page' },
