@@ -72,7 +72,8 @@ async function crudPage(cfg) {
   q.addEventListener('input', draw);
   await reload();
   return h('div', null, pageHead(cfg.title, q, canEdit ? btn('➕ جديد', () => edit(-1), 'pri') : null,
-    btn('تصدير Excel', () => download(cfg.title + '.csv', csvOf(cfg.cols, cur)))), h('div', { class: 'panel' }, holder));
+    canEdit && cfg.import !== false ? btn('⬆ استيراد Excel', () => importDialog({ title: cfg.title, fields, path: cfg.path, fixed: cfg.fixed, onDone: async () => { await reload(); if (cfg.reloadLookups) await load(cfg.reloadLookups, true); } })) : null,
+    btn('⬇ تصدير Excel', () => exportXls(cfg.title + '.xls', cfg.cols, cur)), btn('CSV', () => download(cfg.title + '.csv', csvOf(cfg.cols, cur)))), h('div', { class: 'panel' }, holder));
 }
 
 /* tree page: left tree, right card (accounts, warehouses, item groups, cost centers) */
