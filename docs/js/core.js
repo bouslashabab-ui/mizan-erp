@@ -38,7 +38,7 @@ const qs = (o) => '?' + Object.entries(o).filter(([, v]) => v !== '' && v !== nu
 
 function toast(msg, kind = 'ok') {
   let box = $('#toasts'); if (!box) { box = h('div', { id: 'toasts' }); document.body.append(box); }
-  const t = h('div', { class: 'toast ' + kind }, msg); box.append(t); setTimeout(() => t.remove(), kind === 'err' ? 6000 : 2600);
+  const t = h('div', { class: 'toast ' + kind }, msg); box.append(t); SND.play(kind === 'err' ? 'err' : 'ok'); setTimeout(() => t.remove(), kind === 'err' ? 6000 : 2600);
 }
 const guard = (fn) => async (...a) => { try { return await fn(...a); } catch (e) { toast(e.message, 'err'); } };
 
@@ -149,7 +149,7 @@ function printEl(title, el) {
 }
 
 /* ---------- window manager (MDI tabs) ---------- */
-function openWin(id, title, build, opts = {}) {
+function openWin(id, title, build, opts = {}) { SND.play("open");
   if (MZ.wins[id]) { activate(id); if (opts.refresh) MZ.wins[id].refresh && MZ.wins[id].refresh(); return MZ.wins[id]; }
   const body = h('div', { class: 'win-content' });
   const w = { id, title, body, refresh: null };
@@ -164,7 +164,7 @@ function activate(id) {
   if (MZ.wins[id]) MZ.wins[id].body.classList.add('on');
   renderTabs();
 }
-function closeWin(id) {
+function closeWin(id) { SND.play("close");
   const w = MZ.wins[id]; if (!w) return;
   w.body.remove(); delete MZ.wins[id]; MZ.order = MZ.order.filter(x => x !== id);
   if (MZ.active === id) activate(MZ.order[MZ.order.length - 1] || 'home'); else renderTabs();
