@@ -3,6 +3,7 @@ const http = require('http');
 const C = require('./core');
 const TR = require('./trade');
 const R = require('./reports');
+const EXT = require('./ext');
 const { bad, money, isDate, HttpError } = C;
 const Q = async (sql, p) => (await C.db().query(sql, p))[0];
 
@@ -370,6 +371,7 @@ async function route(req, url, body) {
     if (k === 'invoices') return R.invoiceReport(q);
     if (k === 'budget') return R.budgetReport(q);
   }
+  { const ex = await EXT.handle(req, u, parts, id, body, q); if (ex !== undefined) return ex; }
   if (TABLES[head]) return generic(req, u, head, id, body, q);
   throw new HttpError(404, 'مسار غير موجود');
 }
