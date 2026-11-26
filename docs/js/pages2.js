@@ -2,7 +2,7 @@
 /* Accounting & trade: journal, vouchers, invoices, POS, stock operations */
 const partyOpts = (type) => () => optsOf('parties', p => p.type === type && p.active);
 const leafAcc = () => optsOf('accounts', a => !a.is_group && a.active, accLabel);
-const companyHead = () => h('div', { class: 'hd' }, h('div', null, h('h2', null, MZ.settings.company_name || ''), h('div', null, (MZ.settings.company_address || '') + ' ' + (MZ.settings.company_phone || '')), MZ.settings.tax_no ? h('div', null, 'الرقم الضريبي: ' + MZ.settings.tax_no) : null), h('div', null, 'ميزان ERP'));
+const companyHead = () => h('div', { class: 'hd' }, h('span', { class: 'plogo', html: LOGO.replace(/#fff/g, '#c26a00') }), h('div', null, h('h2', null, MZ.settings.company_name || ''), h('div', null, (MZ.settings.company_address || '') + ' ' + (MZ.settings.company_phone || '')), MZ.settings.tax_no ? h('div', null, 'الرقم الضريبي: ' + MZ.settings.tax_no) : null), h('div', null, 'ميزان ERP'));
 
 /* ---------- journal ---------- */
 function journalEditor(e) {
@@ -39,7 +39,7 @@ MZ.pages.journal = async () => {
   await Promise.all([load('accounts', true), load('cost_centers', true), load('parties', true)]);
   const holder = h('div'); let rows = [];
   const bar = filterBar([{ k: 'from', t: 'من', type: 'date', def: monthStart() }, { k: 'to', t: 'إلى', type: 'date' }, { k: 'q', t: 'بحث' }], async (v) => { rows = await GET('/journal' + qs(v)); draw(); }, { from: monthStart() });
-  const cols = [{ t: 'الرقم', k: 'number' }, { t: 'النوع', f: r => ({ JV: 'قيد يومية', SI: 'مبيعات', SR: 'مردود مبيعات', PI: 'مشتريات', PR: 'مردود مشتريات', RV: 'قبض', PV: 'صرف' }[r.type] || r.type) }, { t: 'التاريخ', k: 'date' }, { t: 'البيان', k: 'description' }, { t: 'القيمة', k: 'total', num: 1 }];
+  const cols = [{ t: 'الرقم', k: 'number' }, { t: 'النوع', f: r => ({ JV: 'قيد يومية', SI: 'مبيعات', SR: 'مردود مبيعات', PI: 'مشتريات', PR: 'مردود مشتريات', RV: 'قبض', PV: 'صرف', CQ: 'شيك', OB: 'افتتاحي', CL: 'إقفال' }[r.type] || r.type) }, { t: 'التاريخ', k: 'date' }, { t: 'البيان', k: 'description' }, { t: 'القيمة', k: 'total', num: 1 }];
   const draw = () => { holder.innerHTML = ''; holder.append(table(cols, rows, { onrow: guard(async (r) => openJournal(await GET('/journal/' + r.id))) })); };
   rows = await GET('/journal' + qs({ from: monthStart() })); draw();
   return h('div', null, pageHead('القيود اليومية', can('journal:edit') ? btn('➕ قيد جديد', () => openJournal(null), 'pri') : null, btn('تصدير', () => download('journal.csv', csvOf(cols, rows)))), bar, h('div', { class: 'panel' }, holder));
@@ -129,12 +129,12 @@ function invoiceEditor(type, src) {
 async function showInvoice(id, listType) {
   const v = await GET('/invoices/' + id);
   const sale = v.type.startsWith('sale') || v.type === 'quote';
-  const doc = h('div', { class: 'print-doc' }, companyHead(), h('h2', null, INV_AR[v.type] + ' رقم ' + v.number),
+  const doc = h('div', { class: 'print-doc' }, companyHead(), h('h2', null, INV_AR[v.type] + ' رقم ' + v.number), h('div', { class: 'bc', html: ean13svg('299' + String(v.id).padStart(9, '0')) }),
     h('p', null, 'التاريخ: ' + v.date + ' | ' + (sale ? 'العميل: ' : 'المورد: ') + (v.party_name || 'نقدي') + ' | المخزن: ' + (v.warehouse_name || '')),
     table([{ t: 'م', f: (r, i) => i + 1 }, { t: 'الكود', k: 'item_code' }, { t: 'الصنف', k: 'item_name' }, { t: 'الوحدة', k: 'unit' }, { t: 'الكمية', f: r => fq(r.qty), cls: 'num' }, { t: 'السعر', k: 'price', num: 1 }, { t: 'خصم', k: 'discount', num: 1 }, { t: 'الإجمالي', k: 'total', num: 1 }], v.lines),
     h('div', { class: 'tot' }, h('span', null, 'الإجمالي: ' + fmt(v.subtotal)), h('span', null, 'الخصم: ' + fmt(v.discount)), h('span', null, 'الضريبة: ' + fmt(v.tax)), h('span', null, 'الصافي: ' + fmt(v.total)), h('span', null, 'المدفوع: ' + fmt(v.paid)), h('span', null, 'المتبقي: ' + fmt(v.total - v.paid))),
     h('p', null, v.notes || ''), h('p', null, MZ.settings.invoice_footer || ''));
-  const btns = [{ t: '🖨 طباعة', fn: () => printEl(v.number, doc) }];
+  const btns = [{ t: '🖨 طباعة A4', fn: () => printEl(v.number, doc) }, { t: '🧾 إيصال 80مم', fn: () => printEl(v.number, doc, { size: '80' }) }];
   const mod = v.type.startsWith('purchase') ? 'purchases' : 'sales';
   if (v.status === 'pending' && can('approve:edit')) btns.push({ t: '✔ اعتماد', kind: 'pri', fn: async (c) => { await POST('/invoices/' + id + '/approve'); toast('تم الاعتماد والترحيل'); c(); refreshInv(v.type); } }, { t: '✖ رفض', fn: async (c) => { await POST('/invoices/' + id + '/reject'); c(); refreshInv(v.type); } });
   if (['quote', 'sale_order', 'purchase_order'].includes(v.type) && v.status !== 'converted' && can(mod + ':edit')) btns.push({ t: '⇢ تحويل إلى ' + (v.type === 'purchase_order' ? 'فاتورة مشتريات' : (v.type === 'quote' ? 'أمر بيع' : 'فاتورة مبيعات')), kind: 'pri', fn: async (c) => { const r = await POST('/invoices/' + id + '/convert', {}); toast('تم التحويل: ' + r.number); c(); refreshInv(v.type); } });
