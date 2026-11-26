@@ -158,3 +158,15 @@ table.grid{border-collapse:collapse;width:100%}
 .lg-msg{margin-top:14px;min-height:20px;font-size:13.5px;color:#ffb4a8}.lg-msg.info{color:#ffe0a3}
 .lg-foot{margin-top:18px;color:#a8947a;font-size:12px;text-align:center}
 @media(max-width:860px){.login-page{grid-template-columns:1fr}.lg-art{display:none}}
+
+/* interactions */
+button,.tb,.rb,.it,.tab,.quick{transition:transform .12s ease,box-shadow .15s ease,filter .15s ease,background .15s}
+button:hover:not(:disabled),.tb:hover{filter:brightness(1.06);transform:translateY(-1px)}
+button:active:not(:disabled),.tb:active,.rb:active,.quick:active{transform:translateY(1px) scale(.97);filter:brightness(.95)}
+.tb:hover i{transform:scale(1.15)}.tb i{display:inline-block;transition:transform .15s}
+table tbody tr{transition:background .12s}table tbody tr:hover{background:#fff0d4}
+@keyframes winIn{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+#desk>*{animation:winIn .22s ease}
+.toast{animation:winIn .2s ease}
+.mute{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:16px;padding:3px 9px;margin-inline-start:6px;cursor:pointer}
+input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px rgba(232,134,12,.25);border-color:#e8860c}
