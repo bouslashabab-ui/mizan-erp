@@ -194,3 +194,5 @@ function recordBar(state) {
 const TYPE_AR = { asset: 'أصول', liability: 'خصوم', equity: 'حقوق ملكية', revenue: 'إيرادات', expense: 'مصروفات' };
 const INV_AR = { sale: 'فاتورة مبيعات', sale_return: 'مردود مبيعات', purchase: 'فاتورة مشتريات', purchase_return: 'مردود مشتريات', quote: 'عرض سعر', sale_order: 'أمر بيع', purchase_order: 'أمر شراء' };
 const STATUS_AR = { posted: 'مرحّلة', draft: 'مسودة', pending: 'بانتظار الاعتماد', cancelled: 'ملغاة', rejected: 'مرفوضة', converted: 'محوّلة' };
+
+const mainWh = () => (MZ.L.warehouses || []).slice().sort((a, b) => a.id - b.id)[0];
