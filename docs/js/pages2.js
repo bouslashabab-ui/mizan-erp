@@ -53,6 +53,7 @@ function openVoucher(type, v) {
     { k: 'party_id', t: 'العميل/المورد (اختياري)', type: 'ref', ref: () => optsOf('parties', null, p => p.name + (p.type === 'customer' ? ' (عميل)' : ' (مورد)')) },
     { k: 'cost_center_id', t: 'مركز التكلفة', type: 'ref', ref: () => optsOf('cost_centers') }, { k: 'amount', t: 'المبلغ', type: 'number', req: 1 }, { k: 'notes', t: 'البيان', type: 'textarea', full: 1 }],
     v || { account_id: +MZ.settings.acc_cash || null });
+  if (!v) { const pf = fs.field('party_id'), cf = fs.field('counter_id'); pf.el.addEventListener('change', () => { const pid = pf.get(), pr = byId('parties', pid); if (pr && !cf.get()) { const a = +(pr.type === 'customer' ? MZ.settings.acc_ar : MZ.settings.acc_ap); if (a) cf.set(a); } }); }
   if (!v) { const hint = h('p', { class: 'cd' }, rec ? 'للتحصيل من عميل اختر حساب العملاء كحساب مقابل مع تحديد العميل.' : 'لدفع مصروف اختر حساب المصروف كحساب مقابل، ولسداد مورد اختر حساب الموردين مع تحديد المورد.'); fs.el.append(hint); }
   modal((rec ? 'سند قبض' : 'سند صرف') + (v ? ' ' + v.number : ' جديد'), fs.el, v ? [{ t: '🖨 طباعة', fn: () => printVoucher(v) }, { t: '🗑 حذف السند', fn: async (c) => { if (await confirmBox('حذف السند وقيده؟')) { await DEL('/vouchers/' + v.id); c(); toast('تم الحذف'); MZ.wins['v-' + type].refresh(); } } }]
     : [{ t: '💾 حفظ وترحيل', kind: 'pri', fn: async (c) => { const d = fs.get(); for (const k of ['account_id', 'counter_id', 'amount']) if (!d[k]) throw new Error('أكمل الحقول المطلوبة'); const r = await POST('/vouchers', { ...d, type }); toast('تم الترحيل ' + r.number); c(); MZ.wins['v-' + type] && MZ.wins['v-' + type].refresh(); } }]);
@@ -160,7 +161,7 @@ MZ.pages.approvals = async () => {
 /* ---------- POS ---------- */
 MZ.pages.pos = async () => {
   await Promise.all([load('items', true), load('warehouses', true), load('parties', true), unitsMap()]);
-  const cart = []; const wh = mkField({ type: 'ref', ref: () => optsOf('warehouses') }); if (MZ.L.warehouses[0]) wh.set(MZ.L.warehouses[0].id);
+  const cart = []; const wh = mkField({ type: 'ref', ref: () => optsOf('warehouses') }); { const mw = mainWh(); if (mw) wh.set(mw.id); }
   const pm = mkField({ type: 'select', options: [{ v: 'cash', t: 'نقدي' }, { v: 'bank', t: 'بطاقة/بنك' }] }, 'cash');
   const search = h('input', { class: 'inp', placeholder: 'امسح الباركود أو ابحث باسم/كود الصنف ثم Enter', autofocus: true });
   const grid = h('div', { class: 'start' }), cartEl = h('div'), totalEl = h('div', { class: 'kpi pos' });
@@ -189,7 +190,7 @@ MZ.pages.pos = async () => {
 /* ---------- stock operations ---------- */
 MZ.pages.stock_adjust = async () => {
   await Promise.all([load('warehouses', true), load('items', true)]);
-  const wh = mkField({ type: 'ref', ref: () => optsOf('warehouses') }); if (MZ.L.warehouses[0]) wh.set(MZ.L.warehouses[0].id);
+  const wh = mkField({ type: 'ref', ref: () => optsOf('warehouses') }); { const mw = mainWh(); if (mw) wh.set(mw.id); }
   const date = mkField({ type: 'date' }, today()); const holder = h('div'); let rows = [];
   const loadRows = async () => { const st = await GET('/reports/stock?by_wh=1&warehouse_id=' + wh.get()); const m = {}; st.forEach(s => m[s.id] = s.qty); rows = MZ.L.items.filter(i => i.kind === 'stock' && i.active).map(i => ({ ...i, cur: m[i.id] || 0, counted: '' })); draw(); };
   const draw = () => { holder.innerHTML = ''; holder.append(table([{ t: 'الكود', k: 'code' }, { t: 'الصنف', k: 'name' }, { t: 'الدفتري', f: r => fq(r.cur), cls: 'num' }, { t: 'الفعلي (الجرد)', f: r => h('input', { class: 'inp', type: 'number', step: 'any', value: r.counted, style: { width: '120px' }, oninput: (e) => { r.counted = e.target.value; } }) }], rows)); };
