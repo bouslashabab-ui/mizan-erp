@@ -394,6 +394,10 @@ const server = http.createServer(async (req, res) => {
     } catch (e) {
       if (e instanceof HttpError) return send(e.code, { error: e.message });
       if (e && e.code === 'ER_DUP_ENTRY') return send(400, { error: 'قيمة مكررة: يوجد سجل بنفس الكود أو الاسم' });
+      if (e && e.code === 'ER_DATA_TOO_LONG') return send(400, { error: 'قيمة أطول من المسموح في أحد الحقول' });
+      if (e && (e.code === 'ER_TRUNCATED_WRONG_VALUE' || e.code === 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD' || e.code === 'ER_WARN_DATA_OUT_OF_RANGE')) return send(400, { error: 'قيمة غير صالحة في أحد الحقول' });
+      if (e && (e.code === 'ER_ROW_IS_REFERENCED_2' || e.code === 'ER_ROW_IS_REFERENCED')) return send(400, { error: 'لا يمكن الحذف: السجل مستخدم في مستندات أخرى' });
+      if (e && e.code === 'ER_NO_REFERENCED_ROW_2') return send(400, { error: 'القيمة المختارة غير موجودة' });
       console.error(e);
       send(500, { error: 'خطأ في الخادم' });
     }
