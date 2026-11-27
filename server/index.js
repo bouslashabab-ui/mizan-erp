@@ -372,6 +372,7 @@ async function route(req, url, body) {
     if (k === 'budget') return R.budgetReport(q);
   }
   { const ex = await EXT.handle(req, u, parts, id, body, q); if (ex !== undefined) return ex; }
+  { const p4 = await require('./p4').handle(req, u, parts, id, body, q); if (p4 !== undefined) return p4; }
   if (TABLES[head]) return generic(req, u, head, id, body, q);
   throw new HttpError(404, 'مسار غير موجود');
 }
